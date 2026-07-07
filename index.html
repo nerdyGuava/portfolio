@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12">
 
@@ -37,7 +38,7 @@
 
     <section class="bg-slate-800/40 border border-slate-700/30 rounded-2xl p-4 mb-6">
       <h3 id="chart-title" class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Global Portfolio Breakdown</h3>
-      <div class="relative w-full max-w-[200px] mx-auto aspect-square">
+      <div class="relative w-full max-w-[240px] mx-auto aspect-square">
         <canvas id="allocationChart"></canvas>
       </div>
     </section>
@@ -59,25 +60,28 @@
   </main>
 
   <script>
+    // Register the datalabels plugin to Chart.js globally
+    Chart.register(ChartDataLabels);
+
     // ⚠️ PASTE YOUR COPIED WEB APP EXTENSION DEPLOYMENT URL HERE
     const API_URL = "https://script.google.com/macros/s/AKfycbxXmofxW5JN2XHinuyldhRgiERUaLodlVrWc4NMoAmMjhapPhdOr6RHVaxoLo0GzPpG/exec";
 
     // App state tracking engine
     let globalRawData = null;
-    let currentCategoryFilter = 'all'; // can be: 'all', 'spy', 'stocks', 'crypto'
-    let currentSortAttribute = 'value'; // can be: 'value', 'change'
-    let isAscending = false; // default to largest metrics first
+    let currentCategoryFilter = 'all'; 
+    let currentSortAttribute = 'value'; 
+    let isAscending = false; 
     let allocationChartInstance = null;
 
     // List categories mapped out manually from your sheet asset structural rules
     const CRYPTO_TICKERS = ['BTC', 'DOGE', 'XMR', 'ETH', 'SOL', 'ADA', 'DOT', 'LINK', 'UNI'];
 
-    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
 
     async function initDashboard() {
       console.log("Initializing dashboard logic architecture...");
       await fetchDashboardData();
-      setInterval(fetchDashboardData, 60000); // Polling update routine loop every 60s
+      setInterval(fetchDashboardData, 60000); 
     }
 
     async function fetchDashboardData() {
@@ -101,11 +105,9 @@
       const totals = globalRawData.totals;
       let assets = [...globalRawData.assets];
 
-      // Isolate exact SPY base metrics for high level card tracking
       const spyAsset = assets.find(a => a.ticker.toUpperCase() === 'SPY');
       const spyTotalVal = spyAsset ? spyAsset.totalValue : 0;
 
-      // Assign an absolute operational category designation flag to each element dynamically
       assets = assets.map(asset => {
         let cat = 'stocks';
         if (asset.ticker.toUpperCase() === 'SPY') cat = 'spy';
@@ -113,22 +115,18 @@
         return { ...asset, category: cat };
       });
 
-      // Update Card Header Values
-      document.getElementById('portfolio-total').innerText = formatCurrency(totals.portfolioTotal);
-      document.getElementById('spy-total').innerText = formatCurrency(spyTotalVal);
-      document.getElementById('stocks-total').innerText = formatCurrency(totals.stocksNoSpyTotal);
-      document.getElementById('crypto-total').innerText = formatCurrency(totals.cryptoTotal);
+      document.getElementById('portfolio-total').innerText = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totals.portfolioTotal);
+      document.getElementById('spy-total').innerText = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(spyTotalVal);
+      document.getElementById('stocks-total').innerText = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totals.stocksNoSpyTotal);
+      document.getElementById('crypto-total').innerText = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totals.cryptoTotal);
 
-      // Handle Milestone engine calculations
       evaluateMilestones(totals.portfolioTotal);
 
-      // Filter list pipeline
       let filteredAssets = assets;
       if (currentCategoryFilter !== 'all') {
         filteredAssets = assets.filter(a => a.category === currentCategoryFilter);
       }
 
-      // Update styling states of UI filters to make selected item obvious
       ['all', 'spy', 'stocks', 'crypto'].forEach(c => {
         const el = document.getElementById(c === 'all' ? 'portfolio-total' : `filter-${c}`);
         if (!el) return;
@@ -139,17 +137,13 @@
         }
       });
 
-      // Sort engine sorting layer
       filteredAssets.sort((a, b) => {
         let valA = currentSortAttribute === 'value' ? a.totalValue : a.changeToday;
         let valB = currentSortAttribute === 'value' ? b.totalValue : b.changeToday;
         return isAscending ? valA - valB : valB - valA;
       });
 
-      // Render the filtered assets list elements
       renderAssetCards(filteredAssets);
-
-      // Generate dynamic context-aware charting visualization
       updateChart(totals, assets, spyTotalVal);
     }
 
@@ -178,10 +172,10 @@
               <span class="font-black tracking-wide text-white text-base">${asset.ticker}</span>
               <span class="text-slate-400 text-xs">${asset.amount.toLocaleString(undefined, {maximumFractionDigits: 3})} units</span>
             </div>
-            <div class="text-xs text-slate-400 mt-0.5">${formatCurrency(asset.price)}</div>
+            <div class="text-xs text-slate-400 mt-0.5">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(asset.price)}</div>
           </div>
           <div class="text-right">
-            <div class="font-bold text-slate-100 text-base">${formatCurrency(asset.totalValue)}</div>
+            <div class="font-bold text-slate-100 text-base">${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(asset.totalValue)}</div>
             <span class="inline-block text-[10px] font-extrabold px-2 py-0.5 rounded border ${changeClass} mt-0.5">
               ${changeSign}${asset.changeToday.toFixed(2)}%
             </span>
@@ -197,14 +191,13 @@
       
       let chartLabels = [];
       let chartData = [];
-      let chartColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f43f5e', '#14b8a6'];
+      let chartColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f43f5e', '#14b8a6', '#38bdf8', '#a7f3d0'];
 
       if (currentCategoryFilter === 'all') {
         chartTitle.innerText = "Global Portfolio Breakdown";
-        chartLabels = ['SPY Core', 'Stocks (Ex-SPY)', 'Crypto'];
+        chartLabels = ['SPY', 'Stocks', 'Crypto'];
         chartData = [spyTotalVal, totals.stocksNoSpyTotal, totals.cryptoTotal];
       } else {
-        // Drilled Down Dynamic Allocation View 
         chartTitle.innerText = `${currentCategoryFilter.toUpperCase()} Individual Distribution`;
         const subset = allAssets.filter(a => a.category === currentCategoryFilter);
         subset.forEach(asset => {
@@ -224,7 +217,7 @@
           datasets: [{
             data: chartData,
             backgroundColor: chartColors,
-            borderWidth: 2,
+            borderWidth: 1.5,
             borderColor: '#1e293b'
           }]
         },
@@ -232,7 +225,33 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false } // Hiding layout legends for optimal mobile view spacing
+            legend: { display: false }, // Keep legends off to save massive space on tiny phone screen layouts
+            datalabels: {
+              color: '#ffffff',
+              font: {
+                weight: 'bold',
+                size: 10
+              },
+              textAlign: 'center',
+              // Automatically hides the text label if the slice is too tiny to fit it
+              display: function(context) {
+                const dataset = context.dataset;
+                const count = dataset.data.length;
+                const value = dataset.data[context.dataIndex];
+                const total = dataset.data.reduce((acc, val) => acc + val, 0);
+                const percentage = (value / total) * 100;
+                return percentage > 4; // Only draw labels on chunks taking up more than 4% of total space
+              },
+              formatter: function(value, context) {
+                const label = context.chart.data.labels[context.dataIndex];
+                const dataset = context.dataset;
+                const total = dataset.data.reduce((acc, val) => acc + val, 0);
+                const percentage = Math.round((value / total) * 100);
+                
+                // Formats slice output cleanly to: "30%\n$BTC"
+                return `${percentage}%\n$${label}`;
+              }
+            }
           }
         }
       });
@@ -246,10 +265,10 @@
 
     function toggleSort(attribute) {
       if (currentSortAttribute === attribute) {
-        isAscending = !isAscending; // Toggle directional parity flip
+        isAscending = !isAscending; 
       } else {
         currentSortAttribute = attribute;
-        isAscending = false; // Reset priority direction rule
+        isAscending = false; 
       }
       console.log(`Sorting rule adjusted parameter: field=${attribute}, ascending=${isAscending}`);
       processAndRender();
@@ -276,7 +295,6 @@
         }
       });
 
-      // Positive celebration calculation check
       for (let i = thresholds.length - 1; i >= 0; i--) {
         const t = thresholds[i];
         if (currentTotal >= t.level && previousPeak < t.level && previousPeak !== 0) {
@@ -285,7 +303,6 @@
         }
       }
 
-      // Negative bear drop condition trigger check 
       let showingBearDip = false;
       thresholds.forEach(t => {
         if (previousPeak >= t.level && currentTotal < t.level) {
