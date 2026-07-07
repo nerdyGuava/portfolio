@@ -6,49 +6,80 @@
   <title>Passive Freedom Tracker</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-24">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-28">
 
   <main class="max-w-md mx-auto px-4 pt-6">
     
+    <div class="flex justify-center mb-5">
+      <div class="bg-slate-950/60 p-1 rounded-xl border border-slate-800 inline-flex gap-1 text-xs">
+        <button id="rate-4-btn" onclick="updateWithdrawalStrategy(0.04)" class="px-4 py-2 rounded-lg font-black bg-indigo-600 text-white shadow transition-all">
+          4% Strategy (Conservative)
+        </button>
+        <button id="rate-5-btn" onclick="updateWithdrawalStrategy(0.05)" class="px-4 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition-all">
+          5% Strategy (Flexible)
+        </button>
+      </div>
+    </div>
+
     <header class="text-center my-4">
-      <p class="text-slate-400 text-xs font-semibold tracking-wider uppercase">Safe Withdrawal Runway (5% Rule)</p>
-      <h1 id="passive-income-display" class="text-3xl font-extrabold text-emerald-400 mt-1">$0.00 <span class="text-xs text-slate-400 font-normal">/ month</span></h1>
-      <p id="portfolio-ref" class="text-slate-500 text-xs mt-1">Based on current asset calculation...</p>
+      <p class="text-slate-400 text-xs font-semibold tracking-wider uppercase">Estimated Portfolio Income Generation</p>
+      <h1 id="monthly-passive-display" class="text-4xl font-extrabold text-emerald-400 mt-1">$0 <span class="text-sm text-slate-400 font-normal">/ month</span></h1>
+      <h2 id="yearly-passive-display" class="text-sm font-bold text-slate-300 mt-1.5">Yearly Runway: $0 / yr</h2>
+      <p id="portfolio-ref" class="text-[10px] text-slate-500 mt-1">Based on active ledger totals...</p>
     </header>
 
-    <section class="space-y-3 mt-6">
-      <h2 class="text-xs font-bold text-slate-400 tracking-wide uppercase px-1">Independence Milestones</h2>
+    <section class="space-y-2.5 mt-6">
+      <div class="flex justify-between items-center px-1">
+        <h2 class="text-xs font-bold text-slate-400 tracking-wide uppercase">Real-Life Expense Milestones</h2>
+        <span id="overall-percentage" class="text-xs font-extrabold text-indigo-400 bg-indigo-950/50 border border-indigo-500/20 px-2 py-0.5 rounded-md">0% Covered</span>
+      </div>
       
-      <div id="tier-1" class="bg-slate-800/40 border border-slate-800 p-4 rounded-xl flex items-center justify-between transition-all">
+      <div id="exp-car" class="bg-slate-800/40 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between transition-all">
         <div>
-          <h3 class="font-bold text-sm text-slate-200">☕ The Subscription Tier</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Coffee, internet, and streaming bills covered.</p>
+          <h3 class="font-bold text-sm text-slate-200">🛡️ Car Insurance</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Fixed auto policy coverage.</p>
         </div>
-        <span class="text-xs font-black text-slate-500 bg-slate-900/50 px-2.5 py-1 rounded-md">$150/mo</span>
+        <span class="text-xs font-black text-slate-400 bg-slate-900/40 px-2.5 py-1 rounded-md border border-slate-800">$200/mo</span>
       </div>
 
-      <div id="tier-2" class="bg-slate-800/40 border border-slate-800 p-4 rounded-xl flex items-center justify-between transition-all">
+      <div id="exp-groceries" class="bg-slate-800/40 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between transition-all">
         <div>
-          <h3 class="font-bold text-sm text-slate-200">🛒 The Grocery Basket</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Basic food and nutritional supply paid for.</p>
+          <h3 class="font-bold text-sm text-slate-200">🛒 Groceries</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Monthly food & household items supply.</p>
         </div>
-        <span class="text-xs font-black text-slate-500 bg-slate-900/50 px-2.5 py-1 rounded-md">$600/mo</span>
+        <span class="text-xs font-black text-slate-400 bg-slate-900/40 px-2.5 py-1 rounded-md border border-slate-800">$500/mo</span>
       </div>
 
-      <div id="tier-3" class="bg-slate-800/40 border border-slate-800 p-4 rounded-xl flex items-center justify-between transition-all">
+      <div id="exp-fun" class="bg-slate-800/40 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between transition-all">
         <div>
-          <h3 class="font-bold text-sm text-slate-200">🏠 The Roof Overhead</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Average monthly rent or mortgage cost paid off.</p>
+          <h3 class="font-bold text-sm text-slate-200">🍔 Fun & Eating Out</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Activities, restaurants, and entertainment budget.</p>
         </div>
-        <span class="text-xs font-black text-slate-500 bg-slate-900/50 px-2.5 py-1 rounded-md">$2,500/mo</span>
+        <span class="text-xs font-black text-slate-400 bg-slate-900/40 px-2.5 py-1 rounded-md border border-slate-800">$500/mo</span>
       </div>
 
-      <div id="tier-4" class="bg-slate-800/40 border border-slate-800 p-4 rounded-xl flex items-center justify-between transition-all">
+      <div id="exp-utilities" class="bg-slate-800/40 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between transition-all">
         <div>
-          <h3 class="font-bold text-sm text-slate-200">🌴 Full Autonomy (FIRE)</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Complete financial baseline freedom reached.</p>
+          <h3 class="font-bold text-sm text-slate-200">⚡ Utilities</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Power, water, trash, and home internet services.</p>
         </div>
-        <span class="text-xs font-black text-slate-500 bg-slate-900/50 px-2.5 py-1 rounded-md">$4,000/mo</span>
+        <span class="text-xs font-black text-slate-400 bg-slate-900/40 px-2.5 py-1 rounded-md border border-slate-800">$600/mo</span>
+      </div>
+
+      <div id="exp-vacation" class="bg-slate-800/40 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between transition-all">
+        <div>
+          <h3 class="font-bold text-sm text-slate-200">✈️ Travel & Vacation</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Sinking fund allocation for global adventures.</p>
+        </div>
+        <span class="text-xs font-black text-slate-400 bg-slate-900/40 px-2.5 py-1 rounded-md border border-slate-800">$1,000/mo</span>
+      </div>
+
+      <div id="exp-mortgage" class="bg-slate-800/40 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between transition-all">
+        <div>
+          <h3 class="font-bold text-sm text-slate-200">🏠 Mortgage Payment</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Primary real estate principal & interest payment.</p>
+        </div>
+        <span class="text-xs font-black text-slate-400 bg-slate-900/40 px-2.5 py-1 rounded-md border border-slate-800">$3,600/mo</span>
       </div>
     </section>
 
@@ -75,45 +106,99 @@
     // ⚠️ REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
     const API_URL = "https://script.google.com/macros/s/AKfycbxXmofxW5JN2XHinuyldhRgiERUaLodlVrWc4NMoAmMjhapPhdOr6RHVaxoLo0GzPpG/exec";
 
-    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+    // Application state constants
+    let currentNetWorth = 0;
+    let selectedWithdrawalRate = 0.04; // Defaults to conservative standard 4%
+
+    // Your actual personal monthly expense structure parameters
+    const REAL_EXPENSES = [
+      { id: 'exp-car', amount: 200 },
+      { id: 'exp-groceries', amount: 500 },
+      { id: 'exp-fun', amount: 500 },
+      { id: 'exp-utilities', amount: 600 },
+      { id: 'exp-vacation', amount: 1000 },
+      { id: 'exp-mortgage', amount: 3600 }
+    ];
+
+    const TOTAL_MONTHLY_OUTFLOW = REAL_EXPENSES.reduce((sum, item) => sum + item.amount, 0); // $5,400
+
+    const formatCurrency = (val, digits = 0) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: digits }).format(val);
 
     async function loadFreedomMetrics() {
-      console.log("Analyzing API data for financial runway calculations...");
+      console.log("Analyzing live parameters for lifestyle freedom mapping calculations...");
       try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        const netWorth = data.totals.portfolioTotal;
+        currentNetWorth = data.totals.portfolioTotal;
 
-        // Calculate Monthly Income under the 5% Rule: (Net Worth * 0.05) / 12 months
-        const annualSafeWithdrawal = netWorth * 0.05;
-        const monthlyPassiveIncome = annualSafeWithdrawal / 12;
-
-        document.getElementById('passive-income-display').innerHTML = `${formatCurrency(monthlyPassiveIncome)} <span class="text-xs text-slate-400 font-normal">/ month</span>`;
-        document.getElementById('portfolio-ref').innerText = `Generated by a total portfolio asset value of ${formatCurrency(netWorth)}`;
-
-        // Evaluate milestone targets dynamically
-        updateMilestoneProgress('tier-1', monthlyPassiveIncome, 150);
-        updateMilestoneProgress('tier-2', monthlyPassiveIncome, 600);
-        updateMilestoneProgress('tier-3', monthlyPassiveIncome, 2500);
-        updateMilestoneProgress('tier-4', monthlyPassiveIncome, 4000);
-
+        calculateAndRenderFreedom();
       } catch (error) {
-        console.error("Failed to load calculation stream:", error);
+        console.error("Critical failure computing financial runway allocations:", error);
       }
     }
 
-    function updateMilestoneProgress(elementId, actualIncome, threshold) {
-      const card = document.getElementById(elementId);
-      const badge = card.querySelector('span');
+    function calculateAndRenderFreedom() {
+      if (currentNetWorth === 0) return;
+
+      // Mathematical modeling formulas
+      const annualSafeWithdrawal = currentNetWorth * selectedWithdrawalRate;
+      const monthlyPassiveIncome = annualSafeWithdrawal / 12;
+
+      // Render Primary Text Targets
+      document.getElementById('monthly-passive-display').innerHTML = `${formatCurrency(monthlyPassiveIncome)} <span class="text-xs text-slate-400 font-normal">/ month</span>`;
+      document.getElementById('yearly-passive-display').innerText = `Yearly Runway: ${formatCurrency(annualSafeWithdrawal)} / yr`;
+      document.getElementById('portfolio-ref').innerText = `Generated by a total portfolio asset value of ${formatCurrency(currentNetWorth, 2)}`;
+
+      // Map out individual expense milestone cards progressively
+      let runningIncomePool = monthlyPassiveIncome;
       
-      if (actualIncome >= threshold) {
-        card.className = "bg-emerald-950/30 border border-emerald-500/40 p-4 rounded-xl flex items-center justify-between transition-all shadow-sm";
-        badge.className = "text-xs font-black text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-md border border-emerald-500/20";
-        badge.innerText = "✓ Covered";
+      REAL_EXPENSES.forEach(exp => {
+        const card = document.getElementById(exp.id);
+        const badge = card.querySelector('span');
+
+        if (runningIncomePool >= exp.amount) {
+          // Fully Covered State
+          card.className = "bg-emerald-950/30 border border-emerald-500/40 p-3.5 rounded-xl flex items-center justify-between shadow-sm transition-all";
+          badge.className = "text-xs font-black text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-md border border-emerald-500/20";
+          badge.innerText = "✓ Covered";
+          runningIncomePool -= exp.amount; // Deduct pool allocation balance
+        } else if (runningIncomePool > 0) {
+          // Partially Covered State
+          const partialPct = Math.round((runningIncomePool / exp.amount) * 100);
+          card.className = "bg-amber-950/20 border border-amber-500/20 p-3.5 rounded-xl flex items-center justify-between transition-all";
+          badge.className = "text-xs font-black text-amber-400 bg-amber-950/70 px-2.5 py-1 rounded-md border border-amber-500/10";
+          badge.innerText = `${partialPct}% Built`;
+          runningIncomePool = 0; // Deplete remaining balance
+        } else {
+          // Not Yet Funded State
+          card.className = "bg-slate-800/40 border border-slate-800/80 p-3.5 rounded-xl flex items-center justify-between opacity-50 transition-all";
+          badge.className = "text-xs font-black text-slate-500 bg-slate-900/50 px-2.5 py-1 rounded-md border border-slate-800";
+          badge.innerText = `$${exp.amount}/mo`;
+        }
+      });
+
+      // Update Global Combined Percentage Tracking Indicator
+      const macroCoveragePct = Math.min(Math.round((monthlyPassiveIncome / TOTAL_MONTHLY_OUTFLOW) * 100), 100);
+      document.getElementById('overall-percentage').innerText = `${macroCoveragePct}% Core Lifestyle Covered`;
+    }
+
+    function updateWithdrawalStrategy(rateValue) {
+      selectedWithdrawalRate = rateValue;
+      console.log(`Recalibrating strategy algorithm configuration framework parameters to: ${rateValue * 100}%`);
+
+      // Update interactive styling configurations for control toggles
+      const btn4 = document.getElementById('rate-4-btn');
+      const btn5 = document.getElementById('rate-5-btn');
+
+      if (rateValue === 0.04) {
+        btn4.className = "px-4 py-2 rounded-lg font-black bg-indigo-600 text-white shadow transition-all";
+        btn5.className = "px-4 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition-all";
       } else {
-        const pct = Math.round((actualIncome / threshold) * 100);
-        badge.innerText = `${pct}% Built`;
+        btn4.className = "px-4 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition-all";
+        btn5.className = "px-4 py-2 rounded-lg font-black bg-indigo-600 text-white shadow transition-all";
       }
+
+      calculateAndRenderFreedom();
     }
 
     loadFreedomMetrics();
