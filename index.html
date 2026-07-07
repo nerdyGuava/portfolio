@@ -3,108 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wealth Dashboard</title>
+  <title>Wealth Dashboard Pro</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12">
 
   <main class="max-w-md mx-auto px-4 pt-6">
     
-    <div id="alert-banner" class="hidden mb-4 p-4 rounded-xl text-center font-bold text-sm shadow-lg transition-all duration-500 transform scale-95"></div>
+    <div id="alert-banner" class="hidden mb-4 p-4 rounded-xl text-center font-bold text-sm shadow-lg transition-all duration-500"></div>
 
-    <header class="text-center my-6">
+    <header class="text-center my-4 cursor-pointer" onclick="setCategoryFilter('all')" title="Reset to All">
       <p class="text-slate-400 text-xs font-semibold tracking-wider uppercase">Net Worth Portfolio</p>
       <h1 id="portfolio-total" class="text-4xl font-extrabold text-white mt-1 tracking-tight">$0.00</h1>
-      <div id="trophy-room" class="flex justify-center gap-2 mt-2 text-xl"></div>
+      <div id="trophy-room" class="flex justify-center gap-2 mt-2 text-xl min-h-[28px]"></div>
     </header>
 
-    <section class="grid grid-cols-3 gap-3 mb-6">
-      <div class="bg-slate-800/60 border border-slate-700/50 p-3 rounded-xl text-center">
+    <section class="grid grid-cols-3 gap-2.5 mb-5">
+      <div id="filter-spy" onclick="setCategoryFilter('spy')" class="bg-slate-800/60 border border-slate-700/50 p-3 rounded-xl text-center cursor-pointer transition-all hover:bg-slate-800">
         <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-medium">SPY Core</span>
         <span id="spy-total" class="text-xs font-bold text-slate-200 block mt-1">$0.00</span>
       </div>
-      <div class="bg-slate-800/60 border border-slate-700/50 p-3 rounded-xl text-center">
+      <div id="filter-stocks" onclick="setCategoryFilter('stocks')" class="bg-slate-800/60 border border-slate-700/50 p-3 rounded-xl text-center cursor-pointer transition-all hover:bg-slate-800">
         <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-medium">Stocks (Ex-SPY)</span>
         <span id="stocks-total" class="text-xs font-bold text-slate-200 block mt-1">$0.00</span>
       </div>
-      <div class="bg-slate-800/60 border border-slate-700/50 p-3 rounded-xl text-center">
+      <div id="filter-crypto" onclick="setCategoryFilter('crypto')" class="bg-slate-800/60 border border-slate-700/50 p-3 rounded-xl text-center cursor-pointer transition-all hover:bg-slate-800">
         <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-medium">Crypto</span>
         <span id="crypto-total" class="text-xs font-bold text-slate-200 block mt-1">$0.00</span>
       </div>
     </section>
 
-    <div class="flex justify-between items-center mb-3">
-      <h2 class="text-sm font-bold text-slate-400 tracking-wide uppercase">Holdings Allocation</h2>
-      <span id="asset-count" class="text-xs text-slate-500">0 Assets</span>
-    </div>
-
-    <section id="asset-list" class="space-y-2.5">
-      <div class="bg-slate-800 animate-pulse h-16 rounded-xl border border-slate-700/30"></div>
-      <div class="bg-slate-800 animate-pulse h-16 rounded-xl border border-slate-700/30"></div>
-      <div class="bg-slate-800 animate-pulse h-16 rounded-xl border border-slate-700/30"></div>
+    <section class="bg-slate-800/40 border border-slate-700/30 rounded-2xl p-4 mb-6">
+      <h3 id="chart-title" class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Global Portfolio Breakdown</h3>
+      <div class="relative w-full max-w-[200px] mx-auto aspect-square">
+        <canvas id="allocationChart"></canvas>
+      </div>
     </section>
+
+    <section class="mb-4 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs text-slate-400">
+      <span id="list-status" class="font-semibold text-slate-300">All Assets</span>
+      <div class="flex gap-2">
+        <button id="sort-value-btn" onclick="toggleSort('value')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded font-medium transition-colors">
+          Sort: Value ⇅
+        </button>
+        <button id="sort-change-btn" onclick="toggleSort('change')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded font-medium transition-colors">
+          Sort: Today % ⇅
+        </button>
+      </div>
+    </section>
+
+    <section id="asset-list" class="space-y-2.5"></section>
 
   </main>
 
   <script>
-    // ⚠️ REPLACE THIS STRING WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
+    // ⚠️ PASTE YOUR COPIED WEB APP EXTENSION DEPLOYMENT URL HERE
     const API_URL = "https://script.google.com/macros/s/AKfycbxXmofxW5JN2XHinuyldhRgiERUaLodlVrWc4NMoAmMjhapPhdOr6RHVaxoLo0GzPpG/exec";
 
-    // Format utility for standard currency outputs
+    // App state tracking engine
+    let globalRawData = null;
+    let currentCategoryFilter = 'all'; // can be: 'all', 'spy', 'stocks', 'crypto'
+    let currentSortAttribute = 'value'; // can be: 'value', 'change'
+    let isAscending = false; // default to largest metrics first
+    let allocationChartInstance = null;
+
+    // List categories mapped out manually from your sheet asset structural rules
+    const CRYPTO_TICKERS = ['BTC', 'DOGE', 'XMR', 'ETH', 'SOL', 'ADA', 'DOT', 'LINK', 'UNI'];
+
     const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 
+    async function initDashboard() {
+      console.log("Initializing dashboard logic architecture...");
+      await fetchDashboardData();
+      setInterval(fetchDashboardData, 60000); // Polling update routine loop every 60s
+    }
+
     async function fetchDashboardData() {
-      console.log("Fetching live ledger data from Google Sheets API...");
       try {
         const response = await fetch(API_URL);
-        const data = await response.json();
-        
-        console.log("Data successfully payloaded:", data);
-        renderDashboard(data);
+        globalRawData = await response.json();
+        console.log("Sheet packet fetched cleanly:", globalRawData);
+        processAndRender();
       } catch (error) {
-        console.error("Critical failure pulling sheet architecture:", error);
+        console.error("Failed to parse financial data layer stream:", error);
         document.getElementById('asset-list').innerHTML = `
           <div class="bg-red-950/40 border border-red-800 text-red-200 p-4 rounded-xl text-center text-xs">
-            Failed to feed data from Google Sheets API. Ensure your script deployment permissions are set to 'Anyone'.
+            Failed to parse API connection. Validate deployment parameters in Apps Script.
           </div>`;
       }
     }
 
-    function renderDashboard(data) {
-      const totals = data.totals;
-      const assets = data.assets;
+    function processAndRender() {
+      if (!globalRawData) return;
 
-      // Extract SPY value straight from asset array to show up in our sub-total bar
+      const totals = globalRawData.totals;
+      let assets = [...globalRawData.assets];
+
+      // Isolate exact SPY base metrics for high level card tracking
       const spyAsset = assets.find(a => a.ticker.toUpperCase() === 'SPY');
       const spyTotalVal = spyAsset ? spyAsset.totalValue : 0;
 
-      // Update Top Tier Figures
+      // Assign an absolute operational category designation flag to each element dynamically
+      assets = assets.map(asset => {
+        let cat = 'stocks';
+        if (asset.ticker.toUpperCase() === 'SPY') cat = 'spy';
+        else if (CRYPTO_TICKERS.includes(asset.ticker.toUpperCase())) cat = 'crypto';
+        return { ...asset, category: cat };
+      });
+
+      // Update Card Header Values
       document.getElementById('portfolio-total').innerText = formatCurrency(totals.portfolioTotal);
       document.getElementById('spy-total').innerText = formatCurrency(spyTotalVal);
       document.getElementById('stocks-total').innerText = formatCurrency(totals.stocksNoSpyTotal);
       document.getElementById('crypto-total').innerText = formatCurrency(totals.cryptoTotal);
-      document.getElementById('asset-count').innerText = `${assets.length} Assets`;
 
-      // Handle calculations for Milestones
+      // Handle Milestone engine calculations
       evaluateMilestones(totals.portfolioTotal);
 
-      // Render Individual Mobile Asset Cards
-      const container = document.getElementById('asset-list');
-      container.innerHTML = ''; // Wipe loading elements
+      // Filter list pipeline
+      let filteredAssets = assets;
+      if (currentCategoryFilter !== 'all') {
+        filteredAssets = assets.filter(a => a.category === currentCategoryFilter);
+      }
 
-      assets.forEach(asset => {
+      // Update styling states of UI filters to make selected item obvious
+      ['all', 'spy', 'stocks', 'crypto'].forEach(c => {
+        const el = document.getElementById(c === 'all' ? 'portfolio-total' : `filter-${c}`);
+        if (!el) return;
+        if (currentCategoryFilter === c) {
+          el.classList.add('ring-2', 'ring-indigo-500', 'bg-slate-800/90');
+        } else {
+          el.classList.remove('ring-2', 'ring-indigo-500', 'bg-slate-800/90');
+        }
+      });
+
+      // Sort engine sorting layer
+      filteredAssets.sort((a, b) => {
+        let valA = currentSortAttribute === 'value' ? a.totalValue : a.changeToday;
+        let valB = currentSortAttribute === 'value' ? b.totalValue : b.changeToday;
+        return isAscending ? valA - valB : valB - valA;
+      });
+
+      // Render the filtered assets list elements
+      renderAssetCards(filteredAssets);
+
+      // Generate dynamic context-aware charting visualization
+      updateChart(totals, assets, spyTotalVal);
+    }
+
+    function renderAssetCards(assetsList) {
+      const container = document.getElementById('asset-list');
+      const statusLabel = document.getElementById('list-status');
+      container.innerHTML = '';
+
+      statusLabel.innerText = `${currentCategoryFilter.toUpperCase()} view (${assetsList.length} items)`;
+
+      if (assetsList.length === 0) {
+        container.innerHTML = `<p class="text-center text-xs text-slate-500 py-6">No records matched active search parameter.</p>`;
+        return;
+      }
+
+      assetsList.forEach(asset => {
         const isPositive = asset.changeToday >= 0;
         const changeClass = isPositive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20';
         const changeSign = isPositive ? '+' : '';
 
         const card = document.createElement('div');
-        card.className = "bg-slate-800/80 border border-slate-700/40 rounded-xl p-3.5 flex justify-between items-center active:scale-[0.99] transition-transform duration-100";
+        card.className = "bg-slate-800/70 border border-slate-700/40 rounded-xl p-3.5 flex justify-between items-center transition-transform active:scale-[0.99]";
         card.innerHTML = `
           <div>
             <div class="flex items-center gap-2">
               <span class="font-black tracking-wide text-white text-base">${asset.ticker}</span>
-              <span class="text-slate-400 text-xs">${asset.amount.toLocaleString(undefined, {maximumFractionDigits: 4})} units</span>
+              <span class="text-slate-400 text-xs">${asset.amount.toLocaleString(undefined, {maximumFractionDigits: 3})} units</span>
             </div>
             <div class="text-xs text-slate-400 mt-0.5">${formatCurrency(asset.price)}</div>
           </div>
@@ -119,12 +191,72 @@
       });
     }
 
-    function evaluateMilestones(currentTotal) {
-      // Pull historical peak stats or baseline at 0 if first initialization
-      const previousPeak = parseFloat(localStorage.getItem('portfolio_historical_peak')) || 0;
-      console.log(`Peak Tracker -> Current: $${currentTotal} | Historical Peak: $${previousPeak}`);
+    function updateChart(totals, allAssets, spyTotalVal) {
+      const ctx = document.getElementById('allocationChart').getContext('2d');
+      const chartTitle = document.getElementById('chart-title');
+      
+      let chartLabels = [];
+      let chartData = [];
+      let chartColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f43f5e', '#14b8a6'];
 
-      // Milestone Threshold Matrices
+      if (currentCategoryFilter === 'all') {
+        chartTitle.innerText = "Global Portfolio Breakdown";
+        chartLabels = ['SPY Core', 'Stocks (Ex-SPY)', 'Crypto'];
+        chartData = [spyTotalVal, totals.stocksNoSpyTotal, totals.cryptoTotal];
+      } else {
+        // Drilled Down Dynamic Allocation View 
+        chartTitle.innerText = `${currentCategoryFilter.toUpperCase()} Individual Distribution`;
+        const subset = allAssets.filter(a => a.category === currentCategoryFilter);
+        subset.forEach(asset => {
+          chartLabels.push(asset.ticker);
+          chartData.push(asset.totalValue);
+        });
+      }
+
+      if (allocationChartInstance) {
+        allocationChartInstance.destroy();
+      }
+
+      allocationChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            data: chartData,
+            backgroundColor: chartColors,
+            borderWidth: 2,
+            borderColor: '#1e293b'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false } // Hiding layout legends for optimal mobile view spacing
+          }
+        }
+      });
+    }
+
+    function setCategoryFilter(category) {
+      console.log(`Shifting viewing filtering profile context to: ${category}`);
+      currentCategoryFilter = category;
+      processAndRender();
+    }
+
+    function toggleSort(attribute) {
+      if (currentSortAttribute === attribute) {
+        isAscending = !isAscending; // Toggle directional parity flip
+      } else {
+        currentSortAttribute = attribute;
+        isAscending = false; // Reset priority direction rule
+      }
+      console.log(`Sorting rule adjusted parameter: field=${attribute}, ascending=${isAscending}`);
+      processAndRender();
+    }
+
+    function evaluateMilestones(currentTotal) {
+      const previousPeak = parseFloat(localStorage.getItem('portfolio_historical_peak')) || 0;
       const thresholds = [
         { level: 100000, label: "100k Club 🥉" },
         { level: 500000, label: "Halfway to Mil 🥈" },
@@ -133,69 +265,54 @@
 
       const banner = document.getElementById('alert-banner');
       const trophyRoom = document.getElementById('trophy-room');
-      trophyRoom.innerHTML = ''; // Reset trophy view container
+      trophyRoom.innerHTML = ''; 
 
-      // Append unlocked milestones as permanent visual display badges under total
       thresholds.forEach(t => {
         if (currentTotal >= t.level) {
           const badge = document.createElement('span');
-          badge.className = "text-xs bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-full shadow-inner font-semibold text-slate-300";
+          badge.className = "text-xs bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-full font-semibold text-slate-300 shadow-sm";
           badge.innerText = t.label;
           trophyRoom.appendChild(badge);
         }
       });
 
-      // --- POSITIVE MILESTONE LOGIC ---
-      // Loop backwards to check the largest milestone crossed first
+      // Positive celebration calculation check
       for (let i = thresholds.length - 1; i >= 0; i--) {
         const t = thresholds[i];
-        
-        // If current total passed a milestone, and the previous peak was below that milestone
         if (currentTotal >= t.level && previousPeak < t.level && previousPeak !== 0) {
           triggerCelebration(t.label);
-          break; // Stop execution after firing top milestone celebration
+          break;
         }
       }
 
-      // --- NEGATIVE MILESTONE LOGIC (DIP ALERTER) ---
+      // Negative bear drop condition trigger check 
+      let showingBearDip = false;
       thresholds.forEach(t => {
-        // If your historical peak was over a milestone, but market volatility dropped you below it now
         if (previousPeak >= t.level && currentTotal < t.level) {
-          banner.className = "block mb-4 p-4 rounded-xl text-center font-bold text-sm shadow-lg bg-amber-500/10 border border-amber-500/30 text-amber-400";
-          banner.innerText = `📉 Market Discount Alert: Slipped back below the ${t.label.split(' ')[0]} milestone. Time to accumulation DCA!`;
+          banner.className = "block mb-4 p-4 rounded-xl text-center font-bold text-sm bg-rose-500/10 border border-rose-500/30 text-rose-400 shadow-md";
+          banner.innerHTML = `🐻 Bear Alert: Slipped below the ${t.label.split(' ')[0]} mark. Frown down, but keep stacking units! ☹️`;
+          showingBearDip = true;
         }
       });
 
-      // Update local storage to lock in the absolute highest peak your assets ever reached
+      if (!showingBearDip && !banner.classList.contains('animate-bounce')) {
+        banner.className = "hidden";
+      }
+
       if (currentTotal > previousPeak) {
         localStorage.setItem('portfolio_historical_peak', currentTotal.toString());
-        console.log(`New portfolio high recorded in localStorage: $${currentTotal}`);
       }
     }
 
     function triggerCelebration(milestoneLabel) {
-      console.log(`🎉 Executing particle fireworks engine for: ${milestoneLabel}`);
-      
       const banner = document.getElementById('alert-banner');
-      banner.className = "block mb-4 p-4 rounded-xl text-center font-bold text-sm shadow-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 animate-bounce";
-      banner.innerText = `🏆 Holy Cow! Milestone Achieved: Welcome to the ${milestoneLabel}!`;
+      banner.className = "block mb-4 p-4 rounded-xl text-center font-bold text-sm bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 animate-bounce shadow-md";
+      banner.innerText = `🏆 Milestone Achieved: Welcome to the ${milestoneLabel}!`;
 
-      // Canvas Confetti execution parameters
-      confetti({
-        particleCount: 180,
-        spread: 80,
-        origin: { y: 0.6 } // Perfectly calibrated for thumb height on smartphones
-      });
+      confetti({ particleCount: 180, spread: 80, origin: { y: 0.6 } });
     }
 
-    // Initialize application runtime loop
     initDashboard();
-    
-    function initDashboard() {
-      fetchDashboardData();
-      // Poll fresh Google Sheet API updates automatically every 60 seconds
-      setInterval(fetchDashboardData, 60000);
-    }
   </script>
 </body>
 </html>
