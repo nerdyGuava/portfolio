@@ -11,7 +11,7 @@
   <main class="max-w-md mx-auto px-4 pt-6">
     
     <header class="text-center my-4">
-      <p class="text-slate-400 text-xs font-semibold tracking-wider uppercase">Safe Withdrawal Runway (4% Rule)</p>
+      <p class="text-slate-400 text-xs font-semibold tracking-wider uppercase">Safe Withdrawal Runway (5% Rule)</p>
       <h1 id="passive-income-display" class="text-3xl font-extrabold text-emerald-400 mt-1">$0.00 <span class="text-xs text-slate-400 font-normal">/ month</span></h1>
       <p id="portfolio-ref" class="text-slate-500 text-xs mt-1">Based on current asset calculation...</p>
     </header>
@@ -84,8 +84,8 @@
         const data = await response.json();
         const netWorth = data.totals.portfolioTotal;
 
-        // Calculate Monthly Income under the 4% Rule: (Net Worth * 0.04) / 12 months
-        const annualSafeWithdrawal = netWorth * 0.04;
+        // Calculate Monthly Income under the 5% Rule: (Net Worth * 0.05) / 12 months
+        const annualSafeWithdrawal = netWorth * 0.05;
         const monthlyPassiveIncome = annualSafeWithdrawal / 12;
 
         document.getElementById('passive-income-display').innerHTML = `${formatCurrency(monthlyPassiveIncome)} <span class="text-xs text-slate-400 font-normal">/ month</span>`;
